@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -25,25 +25,7 @@ export default function Home() {
   const [likingPosts, setLikingPosts] = useState({});
   const { user, isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const response = await fetch("/api/posts");
-        const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch posts");
-        }
-
-        setPosts(data);
-      } catch (error) {
-        toast.error(error.message);
-      }
-      setLoading(false);
-    };
-
-    fetchPosts();
-  }, []);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {

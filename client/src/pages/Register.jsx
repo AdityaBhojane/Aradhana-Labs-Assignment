@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { UserPlus, Eye, EyeOff } from "lucide-react";
+import { useSignUp } from "../hooks/apis/useSignUp";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -14,9 +14,10 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
   const navigate = useNavigate();
+
+  const { isPending:loading, isSuccess, signUpRequest } = useSignUp();
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,7 +25,6 @@ export default function Register() {
       toast.error("Please fill in all fields");
       return;
     }
-
     if (password !== confirmPassword) {
       toast.error("Passwords don't match");
       return;
@@ -34,22 +34,22 @@ export default function Register() {
       toast.error("Password must be at least 6 characters");
       return;
     }
+    await signUpRequest(email, password, name);
+    console.log('done')
+  };
 
-    setLoading(true);
-    const result = await register(email, password, name);
-
-    if (result.success) {
+  useEffect(() => {
+     if (isSuccess) {
       toast.success("Account created successfully!");
       navigate("/");
     } else {
-      toast.error(result.error);
+      toast.error("Failed to create account. Please try again.");
     }
-    setLoading(false);
-  };
+  }, [isSuccess, navigate]);
 
   return (
     <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md m-10">
         <CardHeader className="text-center">
           <div className="mx-auto w-12 h-12 bg-primary rounded-full flex items-center justify-center mb-4">
             <UserPlus className="w-6 h-6 text-primary-foreground" />
@@ -62,11 +62,11 @@ export default function Register() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Username</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="Enter your full name"
+                placeholder="Enter your username"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -120,7 +120,7 @@ export default function Register() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button  type="submit" className="w-full cursor-pointer" disabled={loading}>
               {loading ? "Creating account..." : "Create Account"}
             </Button>
           </form>
