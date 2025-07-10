@@ -8,7 +8,7 @@ export const signupController = async (req, res) => {
         if (!username || !email || !password) {
             return res.status(400).json({ message: "Username, email, and password are required" });
         }
-        const response = await authService.signup(username, email, password);
+        const response = await authService.signup({username, email, password});
         return res.status(201).json(response);
     } catch (error) {
         console.error("Error in signupController:", error);

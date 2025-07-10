@@ -5,6 +5,7 @@ import { createUserToken } from "../utils/createToken.js";
 export const authService = {
     signup:async(userData)=>{
         try {
+            console.log(userData);
             if(!userData.username || !userData.email || !userData.password) {
                 throw new Error("all fields are required");
             }

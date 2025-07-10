@@ -2,8 +2,8 @@
 export const createCrudRepository = (model) => {
     return {
         create: async (data) => {
-            const newItem = new model(data);
-            return await newItem.save();
+            const response = await model.create(data);
+            return response;
         },
         read: async (query) => {
             return await model.find(query);

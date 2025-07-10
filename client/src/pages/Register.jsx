@@ -1,4 +1,4 @@
-import { use, useEffect, useState } from "react";
+import {  useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  const { isPending:loading, isSuccess, signUpRequest } = useSignUp();
+  const { isPending:loading, isSuccess, signUpRequest, isError, error } = useSignUp();
 
 
   const handleSubmit = async (e) => {
@@ -34,18 +34,22 @@ export default function Register() {
       toast.error("Password must be at least 6 characters");
       return;
     }
-    await signUpRequest(email, password, name);
+    console.log(email, password, name);
+    await signUpRequest({email, password, username:name});
     console.log('done')
   };
 
   useEffect(() => {
      if (isSuccess) {
       toast.success("Account created successfully!");
-      navigate("/");
-    } else {
+      console.log(isSuccess)
+      navigate("/login");
+    }  
+    if (isError) {
+      console.log(error)
       toast.error("Failed to create account. Please try again.");
     }
-  }, [isSuccess, navigate]);
+  }, [error, isError, isSuccess, navigate]);
 
   return (
     <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4">

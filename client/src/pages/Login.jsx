@@ -1,20 +1,21 @@
-import { useState } from "react";
+import {  useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { LogIn, Eye, EyeOff } from "lucide-react";
+import { useSignIn } from "../hooks/apis/useSignIn";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+
   const navigate = useNavigate();
+
+  const { isPending: loading, isSuccess, signInRequest, isError } = useSignIn();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,18 +23,19 @@ export default function Login() {
       toast.error("Please fill in all fields");
       return;
     }
+    console.log(email, password);
+    await signInRequest({email, password});
+  };
 
-    setLoading(true);
-    const result = await login(email, password);
-
-    if (result.success) {
+  useEffect(() => {
+      if (isSuccess) {
       toast.success("Welcome back!");
       navigate("/");
-    } else {
-      toast.error(result.error);
+    } 
+    if (isError) {
+      toast.error("Invalid email or password. Please try again.");
     }
-    setLoading(false);
-  };
+  }, [isSuccess, navigate, isError]);
 
   return (
     <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4">

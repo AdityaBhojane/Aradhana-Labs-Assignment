@@ -5,5 +5,5 @@ import { signinController, signupController } from "../controllers/authControlle
 
 export const authRouter = Router();
 
-authRouter.post('/register', signupController);
-authRouter.post('/login', signinController);
+authRouter.post('/signup', signupController);
+authRouter.post('/signin', signinController);

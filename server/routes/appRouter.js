@@ -7,7 +7,7 @@ import { authRouter } from "./authRouter.js";
 
 export const appRouter = Router();
 
-appRouter.use("auth", authRouter);
-appRouter.use("posts", postRouter);
-appRouter.use("comments", commentRouter);
-appRouter.use("likes", likeRouter);
+appRouter.use("/auth", authRouter);
+appRouter.use("/posts", postRouter);
+appRouter.use("/comments", commentRouter);
+appRouter.use("/likes", likeRouter);

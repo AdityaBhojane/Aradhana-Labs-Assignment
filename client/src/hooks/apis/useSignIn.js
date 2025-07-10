@@ -3,8 +3,8 @@ import { useMutation } from "@tanstack/react-query";
 
 
 export const useSignIn = () => {
-    const { data,isPending, isSuccess, mutationFn:signInRequest } = useMutation({
-        mutationFn: (email, password) => signin(email, password),
+    const { data,isPending, isSuccess, mutateAsync:signInRequest, isError } = useMutation({
+        mutationFn: signin,
         onSuccess: (data) => {
             console.log("Signin successful:", data);
         },
@@ -13,5 +13,5 @@ export const useSignIn = () => {
         }
     });
     
-    return { data,isPending, isSuccess, signInRequest };
+    return { data,isPending, isSuccess, signInRequest, isError };
 }
