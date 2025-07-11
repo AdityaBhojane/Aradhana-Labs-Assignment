@@ -1,11 +1,12 @@
 import { axiosInstance } from "../config/axiosConfig";
 
 
-export const addComment = async (postId, commentData) => {
+export const addComment = async (token, postId, content) => {
     try {
-        const response = await axiosInstance.post(`/posts/${postId}/comments`, commentData, {
+        console.log(content)
+        const response = await axiosInstance.post(`/comments/${postId}`, {content}, {
             headers: {
-                'Content-Type': 'application/json',
+                'token':token
             }
         });
         return response.data;
@@ -15,9 +16,13 @@ export const addComment = async (postId, commentData) => {
     }
 };
 
-export const getComments = async (postId) => {
+export const getComments = async (token, postId) => {
     try {
-        const response = await axiosInstance.get(`/posts/${postId}/comments`);
+        const response = await axiosInstance.get(`/comments/${postId}`, {
+            headers: {
+                'token': token
+            }
+        });
         return response.data;
     } catch (error) {
         console.error("Error fetching comments:", error);
@@ -25,9 +30,14 @@ export const getComments = async (postId) => {
     }
 };
 
-export const deleteComment = async (postId, commentId) => {
+export const deleteComment = async (token, commentId, postId) => {
     try {
-        const response = await axiosInstance.delete(`/posts/${postId}/comments/${commentId}`);
+        const response = await axiosInstance.delete(`/comments/${commentId}/${postId}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                'token': token
+            }
+        });
         return response.data;
     } catch (error) {
         console.error("Error deleting comment:", error);

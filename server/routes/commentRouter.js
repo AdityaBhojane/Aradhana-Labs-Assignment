@@ -6,7 +6,7 @@ import { validate } from "../middlewares/validate.js";
 
 export const commentRouter = Router();  
 
-commentRouter.post('/', validate, addCommentController);
+commentRouter.post('/:postId', validate, addCommentController);
 commentRouter.get('/:postId', validate, getCommentsByPostIdController);
-commentRouter.delete('/:commentId', validate, deleteCommentController);
+commentRouter.delete('/:commentId/:postId', validate, deleteCommentController);
 

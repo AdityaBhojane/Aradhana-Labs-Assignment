@@ -17,7 +17,7 @@ import EditPost from "./pages/EditPost";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
-import { AuthProvider } from "./contexts/AuthContext";
+
 
 
 const queryClient = new QueryClient();
@@ -25,7 +25,6 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="dark" storageKey="blog-ui-theme">
-      <AuthProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -44,7 +43,6 @@ const App = () => (
             </Layout>
           </BrowserRouter>
         </TooltipProvider>
-      </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

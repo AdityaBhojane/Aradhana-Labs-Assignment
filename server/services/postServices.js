@@ -3,7 +3,7 @@ import { postRepository } from "../repository/postRepository.js";
 export const postService = {
     createPost: async (postData) => {
         try {
-            if (!postData.title || !postData.text) {
+            if (!postData.caption  || !postData.text) {
                 throw new Error("All fields are required");
             }
             const response = await postRepository.create(postData);
@@ -18,7 +18,7 @@ export const postService = {
             if (!postId) {
                 throw new Error("Post ID is required");
             }
-            const post = await postRepository.findById(postId);
+            const post = await postRepository.findPostById(postId);
             if (!post) {
                 throw new Error("Post not found");
             }
@@ -33,7 +33,10 @@ export const postService = {
         try {
             const response = await postRepository.getPaginatedPosts(page, limit);
             if (!response || response.length === 0) {   
-                throw new Error("No posts found");
+                return {
+                    message: "No posts found",
+                    posts: []
+                };
             }           
             return response;
         } catch (error) {

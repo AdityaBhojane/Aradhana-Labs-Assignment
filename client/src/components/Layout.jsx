@@ -1,8 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/components/theme-provider";
-import { Moon, Sun, PenTool, Home, User, LogOut } from "lucide-react";
+import { Moon, Sun, PenTool, User, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,14 +9,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuthStore } from "../store/authStore";
 
 export default function Layout({ children }) {
-  const { user, logout, isAuthenticated } = useAuth();
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
+    logout()
     navigate("/");
   };
 
@@ -40,7 +41,7 @@ export default function Layout({ children }) {
             >
               Home
             </Link>
-            {isAuthenticated && (
+            {user && (
               <Link
                 to="/create"
                 className="text-foreground/80 hover:text-foreground transition-colors"
@@ -62,7 +63,7 @@ export default function Layout({ children }) {
               <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             </Button>
 
-            {isAuthenticated ? (
+            {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -76,12 +77,12 @@ export default function Layout({ children }) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem asChild>
+                  {/* <DropdownMenuItem asChild>
                     <Link to="/profile" className="flex items-center">
                       <User className="mr-2 h-4 w-4" />
                       Profile
                     </Link>
-                  </DropdownMenuItem>
+                  </DropdownMenuItem> */}
                   <DropdownMenuItem asChild>
                     <Link to="/create" className="flex items-center">
                       <PenTool className="mr-2 h-4 w-4" />

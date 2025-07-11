@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
   User,
@@ -20,7 +19,8 @@ import {
 export default function Profile() {
   const [userPosts, setUserPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { user, isAuthenticated } = useAuth();
+  const isAuthenticated= true;
+  const user = { id: 1, name: "John Doe", email: "john@example.com", createdAt: "2023-01-01" };
   const navigate = useNavigate();
 
   // Redirect if not authenticated

@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useAuth } from "@/contexts/AuthContext";
+
 import { toast } from "sonner";
 import {
   Calendar,
@@ -28,155 +28,109 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { BlogImage } from "@/components/BlogImage";
+import { useGetPostById } from "../hooks/apis/post/useGetPostById";
+import { useAuthStore } from "../store/authStore";
+import { useDeletePost } from "../hooks/apis/post/useDeletePost";
+import { useAddLike } from "../hooks/apis/likes/useAddLike";
+import { useRemoveLike } from "../hooks/apis/likes/useRemoveLike";
+import { useGetLikes } from "../hooks/apis/likes/useGetLiks";
+import { useAddComments } from "../hooks/apis/comments/useAddComments";
+import { useDeleteComment } from "../hooks/apis/comments/useDeleteCommnet";
+import { useGetComment } from "../hooks/apis/comments/useGetComment";
+
+
 
 export default function PostDetail() {
-  const [post, setPost] = useState(null);
-  const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [commentLoading, setCommentLoading] = useState(false);
   const [liked, setLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
-  const { user, isAuthenticated } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const { id } = useParams();
   const navigate = useNavigate();
+  const { post, isLoading: loading } = useGetPostById(id)
+  const { deletePostRequest, isPending: deleteLoading } = useDeletePost(id);
+  const { addLikeRequest, isPending: likeLoading } = useAddLike(id);
+  const { removeLikeRequest, isPending: unlikeLoading } = useRemoveLike(id);
+  const { likes, isLoading: likesLoading } = useGetLikes(id);
+  const { addCommentRequest, isPending: commentLoading } = useAddComments(id);
+  const { deleteCommentRequest } = useDeleteComment(id);
+  const { comments = [], isLoading: commentsLoading } = useGetComment(id);
+
 
   useEffect(() => {
-    const fetchPost = async () => {
-      try {
-        const response = await fetch(`/api/posts/${id}`);
-        const data = await response.json();
+    if (likes && user) {
+      const userLiked = likes.filter(like => like.userId === user.id);
+      setLiked(userLiked);
+    }
+  }, [likes, user]);
 
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch post");
-        }
+  const handleDeletePost = async () => {
+    if (!user) {
+      toast.error("Please sign in to delete posts");
+      return;
+    }
 
-        setPost(data);
-        setComments(data.comments || []);
-        setLikesCount(data.likesCount || 0);
-
-        // Check if current user liked this post
-        if (isAuthenticated) {
-          const likeResponse = await fetch(`/api/posts/${id}/like/${user.id}`);
-          const likeData = await likeResponse.json();
-          setLiked(likeData.liked);
-        }
-      } catch (error) {
-        toast.error(error.message);
-        navigate("/");
-      }
-      setLoading(false);
-    };
-
-    fetchPost();
-  }, [id, isAuthenticated, user?.id, navigate]);
+    try {
+      await deletePostRequest();
+      toast.success("Post deleted successfully!");
+      navigate("/");
+    } catch (error) {
+      toast.error(error?.message || "Failed to delete post");
+    }
+  };
 
   const handleLike = async () => {
-    if (!isAuthenticated) {
+    if (!user) {
       toast.error("Please sign in to like posts");
       return;
     }
 
     try {
-      const response = await fetch(`/api/posts/${id}/like`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: user.id }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to toggle like");
+      if (liked.length) {
+        await removeLikeRequest(liked[0]._id);
+        toast.success("Post unliked!");
+      } else {
+        await addLikeRequest();
+        toast.success("Post liked!");
       }
-
-      setLiked(data.liked);
-      setLikesCount((prev) => (data.liked ? prev + 1 : prev - 1));
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error?.message || "Failed to toggle like");
     }
   };
 
   const handleAddComment = async (e) => {
     e.preventDefault();
-    if (!isAuthenticated) {
+    
+    if (!user) {
       toast.error("Please sign in to comment");
       return;
     }
 
     if (!newComment.trim()) {
-      toast.error("Please enter a comment");
+      toast.error("Comment cannot be empty");
       return;
     }
 
-    setCommentLoading(true);
     try {
-      const response = await fetch(`/api/posts/${id}/comments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: newComment.trim(),
-          authorId: user.id,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to add comment");
-      }
-
-      const newCommentWithAuthor = {
-        ...data,
-        author: { id: user.id, name: user.name },
-      };
-
-      setComments((prev) => [...prev, newCommentWithAuthor]);
-      setNewComment("");
-      toast.success("Comment added!");
+      await addCommentRequest(newComment);
+      toast.success("Comment added successfully!");
+      // setNewComment("");
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error?.message || "Failed to add comment");
     }
-    setCommentLoading(false);
   };
 
   const handleDeleteComment = async (commentId) => {
-    try {
-      const response = await fetch(`/api/comments/${commentId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to delete comment");
-      }
-
-      setComments((prev) => prev.filter((comment) => comment.id !== commentId));
-      toast.success("Comment deleted");
-    } catch (error) {
-      toast.error(error.message);
+    if (!user) {
+      toast.error("Please sign in to delete comments");
+      return;
     }
-  };
 
-  const handleDeletePost = async () => {
     try {
-      const response = await fetch(`/api/posts/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to delete post");
-      }
-
-      toast.success("Post deleted successfully");
-      navigate("/");
+      console.log(commentId)
+      await deleteCommentRequest(commentId);
+      toast.success("Comment deleted successfully!");
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error?.message || "Failed to delete comment");
     }
   };
 
@@ -209,6 +163,28 @@ export default function PostDetail() {
     );
   }
 
+  if (!post) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Post Not Found
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            The post you're looking for doesn't exist or has been deleted.
+          </p>
+          <Button onClick={() => navigate("/")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const likesCount = likes?.length || 0;
+  const commentsCount = comments?.length || 0;
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <Button variant="ghost" className="mb-6" onClick={() => navigate("/")}>
@@ -221,7 +197,7 @@ export default function PostDetail() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
               <User className="w-4 h-4" />
-              <span>{post.author?.name || "Anonymous"}</span>
+              <span>{post.user?.username?.toUpperCase() || "Anonymous"}</span>
               <span>•</span>
               <Calendar className="w-4 h-4" />
               <span>{formatDate(post.createdAt)}</span>
@@ -232,19 +208,23 @@ export default function PostDetail() {
                 </>
               )}
             </div>
-            {isAuthenticated && user.id === post.authorId && (
+            {user && user.id === post.user._id && (
               <div className="flex items-center space-x-2">
                 <Button variant="outline" size="sm" asChild>
-                  <Link to={`/edit/${post.id}`}>
+                  <Link to={`/edit/${post._id}`}>
                     <Edit className="w-4 h-4 mr-1" />
                     Edit
                   </Link>
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm">
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      disabled={deleteLoading}
+                    >
                       <Trash2 className="w-4 h-4 mr-1" />
-                      Delete
+                      {deleteLoading ? "Deleting..." : "Delete"}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -260,8 +240,9 @@ export default function PostDetail() {
                       <AlertDialogAction
                         onClick={handleDeletePost}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        disabled={deleteLoading}
                       >
-                        Delete
+                        {deleteLoading ? "Deleting..." : "Delete"}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -269,31 +250,36 @@ export default function PostDetail() {
               </div>
             )}
           </div>
-          <h1 className="text-3xl font-bold">{post.title}</h1>
+          <h1 className="text-3xl font-bold">{post.caption}</h1>
         </CardHeader>
         <CardContent>
           <BlogImage
             src={post.image}
-            alt={post.title}
+            alt={post.caption}
             className="rounded-lg mb-6 h-64"
             fallbackClassName="rounded-lg mb-6"
           />
           <div className="prose prose-lg max-w-none dark:prose-invert">
-            <p className="whitespace-pre-wrap">{post.content}</p>
+            <p className="whitespace-pre-wrap">{post.text}</p>
           </div>
           <div className="flex items-center space-x-4 mt-6 pt-6 border-t">
             <Button
-              variant={liked ? "default" : "outline"}
+              variant={liked.length>0 ? "default" : "outline"}
               size="sm"
               onClick={handleLike}
-              className="flex items-center space-x-1"
+              disabled={likeLoading || unlikeLoading || likesLoading}
+              className="flex items-center space-x-1 cursor-pointer"
             >
-              <Heart className={`w-4 h-4 ${liked ? "fill-current" : ""}`} />
-              <span>{likesCount}</span>
+              <Heart className={`w-4 h-4 ${liked.length > 0 ? "fill-current" : ""}`} />
+              <span>
+                {likesLoading ? "..." : likesCount}
+              </span>
             </Button>
             <div className="flex items-center space-x-1 text-muted-foreground">
               <MessageCircle className="w-4 h-4" />
-              <span>{comments.length} comments</span>
+              <span>
+                {commentsLoading ? "..." : commentsCount} comments
+              </span>
             </div>
           </div>
         </CardContent>
@@ -303,12 +289,12 @@ export default function PostDetail() {
       <Card>
         <CardHeader>
           <h3 className="text-xl font-semibold">
-            Comments ({comments.length})
+            Comments ({commentsLoading ? "..." : commentsCount})
           </h3>
         </CardHeader>
         <CardContent>
           {/* Add Comment Form */}
-          {isAuthenticated ? (
+          {user ? (
             <form onSubmit={handleAddComment} className="mb-6">
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-blue-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
@@ -320,6 +306,7 @@ export default function PostDetail() {
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     className="mb-2"
+                    disabled={commentLoading}
                   />
                   <Button
                     type="submit"
@@ -344,45 +331,58 @@ export default function PostDetail() {
           )}
 
           {/* Comments List */}
-          <div className="space-y-4">
-            {comments.map((comment) => (
-              <div key={comment.id} className="flex items-start space-x-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-blue-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
-                  {comment.author?.name?.charAt(0)?.toUpperCase() || "U"}
-                </div>
-                <div className="flex-1">
-                  <div className="bg-muted rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-sm">
-                        {comment.author?.name || "Anonymous"}
-                      </span>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs text-muted-foreground">
-                          {formatDate(comment.createdAt)}
-                        </span>
-                        {isAuthenticated && user.id === comment.authorId && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteComment(comment.id)}
-                            className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-sm">{comment.content}</p>
+          {commentsLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-start space-x-3">
+                  <Skeleton className="w-8 h-8 rounded-full" />
+                  <div className="flex-1">
+                    <Skeleton className="h-16 w-full rounded-lg" />
                   </div>
                 </div>
-              </div>
-            ))}
-            {comments.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No comments yet. Be the first to share your thoughts!
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {comments.map((comment) => (
+                <div key={comment.id} className="flex items-start space-x-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-blue-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                    {comment.userId?.username?.charAt(0)?.toUpperCase() || "U"}
+                  </div>
+                  <div className="flex-1">
+                    <div className="bg-muted rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-sm ">
+                          @{comment.userId?.username || "Anonymous"}
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(comment.createdAt)}
+                          </span>
+                          {user && user.id === comment.userId._id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteComment(comment._id)}
+                              className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive cursor-pointer"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-sm">{comment.content}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {comments.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No comments yet. Be the first to share your thoughts!
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

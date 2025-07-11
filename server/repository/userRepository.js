@@ -6,4 +6,7 @@ export const userRepository = {
     findByEmail: async (email) => {
         return await UserModel.findOne({ email });
     }, 
+    findUserById: async (id) => {
+        return await UserModel.findById(id);
+    },
 }

@@ -5,58 +5,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Edit, Image as ImageIcon, Save, Loader2 } from "lucide-react";
+import { Edit, Image as ImageIcon, Save, ArrowLeft } from "lucide-react";
 import { BlogImage } from "@/components/BlogImage";
+
+import { useAuthStore } from "@/store/authStore";
+import { useUpdatePosts } from "../hooks/apis/post/useUpdatePost";
+import { useGetPostById } from "../hooks/apis/post/useGetPostById";
+
 
 export default function EditPost() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [image, setImage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
-  const [post, setPost] = useState(null);
-  const { user, isAuthenticated } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
   const { id } = useParams();
-
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
+  const { updatePostRequest, isPending: isUpdating, isSuccess, isError } = useUpdatePosts(id);
+  const { post, isLoading: loading } = useGetPostById(id);
+  if (!user) {
     navigate("/login");
-    return null;
-  }
-
+  };
+  
   useEffect(() => {
-    const fetchPost = async () => {
-      try {
-        const response = await fetch(`/api/posts/${id}`);
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch post");
-        }
-
-        // Check if user owns this post
-        if (data.authorId !== user.id) {
-          toast.error("You can only edit your own posts");
-          navigate("/");
-          return;
-        }
-
-        setPost(data);
-        setTitle(data.title);
-        setContent(data.content);
-        setImage(data.image || "");
-      } catch (error) {
-        toast.error(error.message);
-        navigate("/");
-      }
-      setPageLoading(false);
-    };
-
-    fetchPost();
-  }, [id, user.id, navigate]);
+    if (post) {
+        setTitle(post.caption || "");
+        setContent(post.text || "");
+        setImage(post.image || "");
+    }
+  }, [post, user.id, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -64,40 +42,77 @@ export default function EditPost() {
       toast.error("Please fill in title and content");
       return;
     }
+      try {
+    await updatePostRequest({
+      caption: title.trim(),
+      text: content.trim(),
+      image: image.trim() || null,
+    });
 
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/posts/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          content: content.trim(),
-          image: image.trim() || null,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to update post");
-      }
-
-      toast.success("Post updated successfully!");
-      navigate(`/post/${id}`);
-    } catch (error) {
-      toast.error(error.message);
-    }
-    setLoading(false);
+  } catch (error) {
+    toast.error("Something went wrong while updating the post.");
+    console.error("Update error:", error);
+  }
   };
 
-  if (pageLoading) {
+  useEffect(()=>{
+    if(isSuccess) {
+      toast.success("Post updated successfully!");
+      navigate(`/post/${id}`);
+      return;
+    }
+    if(isError){
+      toast.error("Failed to update post. Please try again.");
+      return;
+    }
+  },[isSuccess, isError, navigate, id])
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  if (loading) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin" />
+        <Skeleton className="h-8 w-32 mb-6" />
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-3/4 mb-4" />
+            <Skeleton className="h-4 w-48" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!post) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Post Not Found
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            The post you're looking for doesn't exist or has been deleted.
+          </p>
+          <Button onClick={() => navigate("/")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Button>
         </div>
       </div>
     );
@@ -105,6 +120,11 @@ export default function EditPost() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <Button variant="ghost" className="mb-6" onClick={() => navigate(`/post/${id}`)}>
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Post
+      </Button>
+
       <Card>
         <CardHeader>
           <div className="flex items-center space-x-3">
@@ -113,7 +133,9 @@ export default function EditPost() {
             </div>
             <div>
               <CardTitle className="text-2xl">Edit Post</CardTitle>
-              <p className="text-muted-foreground">Update your post content</p>
+              <p className="text-muted-foreground">
+                Update your post content • Last updated {formatDate(post.updatedAt)}
+              </p>
             </div>
           </div>
         </CardHeader>
@@ -128,6 +150,7 @@ export default function EditPost() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="text-lg"
+                disabled={isUpdating}
                 required
               />
             </div>
@@ -143,6 +166,7 @@ export default function EditPost() {
                 placeholder="Enter image URL"
                 value={image}
                 onChange={(e) => setImage(e.target.value)}
+                disabled={isUpdating}
               />
               {image && (
                 <div className="mt-2 max-w-md">
@@ -164,10 +188,11 @@ export default function EditPost() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 className="min-h-[300px] resize-none"
+                disabled={isUpdating}
                 required
               />
               <p className="text-sm text-muted-foreground">
-                {content.length} characters
+                {content?.length} characters
               </p>
             </div>
 
@@ -176,16 +201,17 @@ export default function EditPost() {
                 type="button"
                 variant="outline"
                 onClick={() => navigate(`/post/${id}`)}
+                disabled={isUpdating}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={loading}
-                className="flex items-center space-x-2"
+                disabled={isUpdating || !title.trim() || !content.trim()}
+                className="flex items-center space-x-2 cursor-pointer"
               >
                 <Save className="w-4 h-4" />
-                <span>{loading ? "Saving..." : "Save Changes"}</span>
+                <span>{isUpdating ? "Saving..." : "Save Changes"}</span>
               </Button>
             </div>
           </form>

@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useAuth } from "@/contexts/AuthContext";
 import { BlogImage } from "@/components/BlogImage";
 import { toast } from "sonner";
 import {
@@ -20,15 +19,16 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuthStore } from "../store/authStore";
 
 export function CommentModal({ isOpen, onClose, post, onUpdate }) {
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(false);
-  const { user, isAuthenticated } = useAuth();
+  const user = useAuthStore((state) => state.user);
 
   const handleAddComment = async (e) => {
     e.preventDefault();
-    if (!isAuthenticated) {
+    if (!user) {
       toast.error("Please sign in to comment");
       return;
     }
@@ -134,13 +134,13 @@ export function CommentModal({ isOpen, onClose, post, onUpdate }) {
               <div className="flex space-x-4">
                 <BlogImage
                   src={post.image}
-                  alt={post.title}
+                  alt={post.caption}
                   className="w-20 h-20 rounded-lg flex-shrink-0"
                   fallbackClassName="rounded-lg"
                 />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold line-clamp-1 mb-2">
-                    {post.title}
+                    {post.caption}
                   </h3>
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-2">
                     <User className="w-3 h-3" />
@@ -150,7 +150,7 @@ export function CommentModal({ isOpen, onClose, post, onUpdate }) {
                     <span>{formatDate(post.createdAt)}</span>
                   </div>
                   <p className="text-sm text-muted-foreground line-clamp-2">
-                    {post.content.substring(0, 150)}...
+                    {post.text.substring(0, 150)}...
                   </p>
                 </div>
               </div>
@@ -158,7 +158,7 @@ export function CommentModal({ isOpen, onClose, post, onUpdate }) {
           </Card>
 
           {/* Add Comment Form */}
-          {isAuthenticated ? (
+          {user ? (
             <Card className="flex-shrink-0">
               <CardContent className="p-4">
                 <form onSubmit={handleAddComment} className="space-y-3">
@@ -235,7 +235,7 @@ export function CommentModal({ isOpen, onClose, post, onUpdate }) {
                               <span className="text-xs text-muted-foreground">
                                 {formatDate(comment.createdAt)}
                               </span>
-                              {isAuthenticated &&
+                              {user &&
                                 user.id === comment.authorId && (
                                   <Button
                                     variant="ghost"

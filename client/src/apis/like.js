@@ -1,11 +1,12 @@
 import { axiosInstance } from "../config/axiosConfig";
 
 
-export const addLike = async (postId) => {
+export const addLike = async (token,postId) => {
     try {
-        const response = await axiosInstance.post(`/posts/${postId}/like`, {}, {
+        const response = await axiosInstance.post(`/likes/${postId}`, {}, {
             headers: {
                 'Content-Type': 'application/json',
+                'token': token
             }
         });
         return response.data;
@@ -16,11 +17,12 @@ export const addLike = async (postId) => {
     }
 };
 
-export const removeLike = async (postId) => {
+export const removeLike = async (token,postId,likeId) => {
     try {
-        const response = await axiosInstance.delete(`/posts/${postId}/like`, {
+        const response = await axiosInstance.delete(`/likes/${postId}/${likeId}`, {
             headers: {
                 'Content-Type': 'application/json',
+                'token': token
             }
         });
         return response.data;
@@ -32,7 +34,7 @@ export const removeLike = async (postId) => {
 
 export const getLikes = async (postId) => {
     try {
-        const response = await axiosInstance.get(`/posts/${postId}/likes`);
+        const response = await axiosInstance.get(`/likes/${postId}`);
         return response.data;
     } catch (error) {
         console.error("Error fetching likes:", error);

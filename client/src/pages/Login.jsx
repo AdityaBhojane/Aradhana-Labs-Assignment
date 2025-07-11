@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { LogIn, Eye, EyeOff } from "lucide-react";
-import { useSignIn } from "../hooks/apis/useSignIn";
+import { useSignIn } from "../hooks/apis/auth/useSignIn";
 
 export default function Login() {
   const [email, setEmail] = useState("");

@@ -8,15 +8,16 @@ const postSchema = new mongoose.Schema({
     },
     text:{
         type:String,
-        required:true
+        required:true,
+        minLength: 10
     },
     image: {
         type: String,
-        required: true
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
+        ref: "User",
+        required: true
     },
     comments: [
         {
@@ -24,6 +25,9 @@ const postSchema = new mongoose.Schema({
             ref: "Comment"
         }
     ],
+    public_key:{
+        type:String,
+    },
     likes: [
         {
             type: mongoose.Schema.Types.ObjectId,
