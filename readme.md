@@ -3,7 +3,8 @@
 A full-stack blog application with user authentication, post management, comments, and likes functionality.
 
 ## 🚀 Live Deployment
-[Add your deployment link here]
+NOTE : This is free deployment backend might down due to inactivity 
+[deployment link here](https://aradhana-labs-assignment.vercel.app/)
 
 ## 📋 Table of Contents
 - [Tech Stack](#tech-stack)
