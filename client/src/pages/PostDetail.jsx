@@ -113,7 +113,7 @@ export default function PostDetail() {
     try {
       await addCommentRequest(newComment);
       toast.success("Comment added successfully!");
-      // setNewComment("");
+      setNewComment("");
     } catch (error) {
       toast.error(error?.message || "Failed to add comment");
     }
